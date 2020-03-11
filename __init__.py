@@ -269,7 +269,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 			if tmpDataFromPrinter["progress"]["filepos"] is not None and not eventID == 'printing_started' and not eventID == 'printing_done' :
 				data["filepos"] = str(int(tmpDataFromPrinter["progress"]["filepos"]) / 1048576) + 'MB'
 
-		return self.send_message(eventID, tmpConfig["message"].format(**data), tmpConfig["with_snapshot"], data)
+		return self.send_message(eventID, tmpConfig["message"], tmpConfig["with_snapshot"], data)
 
 	def exec_script(self, eventName, which=""):
 
