@@ -29,27 +29,28 @@ class Hook():
     def post(self):
         self.format()
 
-        webhook = DiscordWebhook(url=self.url, username=self.username, avatar_url=self.avatar)
-        embed = DiscordEmbed(title=self.message, color=self.side_bar)
-        embed.set_footer(text='3DMeltdown-octorant _beta_', icon_url="https://cdn.discordapp.com/emojis/673897582375993365.png")
-        embed.set_timestamp()
+        urls = self.url.split(',')
 
-        for k in self.data:
-            if self.data[k] is not None:
-                value = format(self.data[k])
-                # if value.replace('.','',1).isdigit() and value.count('.') == 1:
-                #     value = "{:.3}".format(float(value))
+        for url in urls:
+            webhook = DiscordWebhook(url=url, username=self.username, avatar_url=self.avatar)
+            embed = DiscordEmbed(title=self.message, color=self.side_bar)
+            embed.set_footer(text='3DMeltdown-octorant _beta_', icon_url="https://cdn.discordapp.com/emojis/673897582375993365.png")
+            embed.set_timestamp()
 
-                embed.add_embed_field(name=format(k), value=value)
+            for k in self.data:
+                if self.data[k] is not None:
+                    value = format(self.data[k])
+                    # if value.replace('.','',1).isdigit() and value.count('.') == 1:
+                    #     value = "{:.3}".format(float(value))
 
-        if self.attachment is not None:
-            webhook.add_file(file=self.attachment["file"][1], filename="0.png")
-            embed.set_image(url='attachment://0.png')
+                    embed.add_embed_field(name=format(k), value=value)
 
-        webhook.add_embed(embed)
-        if webhook.execute():
-            return True
-        else:
-            return False
+            if self.attachment is not None:
+                webhook.add_file(file=self.attachment["file"][1], filename="0.png")
+                embed.set_image(url='attachment://0.png')
+
+            webhook.add_embed(embed)
+
+        return True
 
 #        resp = requests.post(self.url,files=self.attachment,data=self.payload)
