@@ -244,19 +244,21 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 		) :
 			return False			
 
+		# Do some cleanup for display purposes
 		if eventID == 'printing_started':
 			data = {key:data[key] for key in ['name', 'size']}
-
-		if eventID == "printing_cancelled":
+		elif eventID == "printing_cancelled":
 			data["time"] = str(timedelta(seconds=int(data["time"])))
 			data = {key:data[key] for key in ['name', 'size', 'time']}
-
-		if eventID == 'printing_done':
+		elif eventID == 'printing_done':
 			data = {key:data[key] for key in ['name', 'size']}
 
 
+		# Format some of the values
 		if 'size' in data:
 			data['size'] = "{:.2f}MB".format(float(data['size']) / 1048576)
+		if 'name' in data:
+			data['name'] = str(data['name']).replace('.gcode', '').replace('.GCODE', '')
 		if 'progress' in data:
 			data['progress'] = str(data['progress']) + '%'
 
@@ -266,7 +268,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 				data["printTimeLeft"] = str(timedelta(seconds=int(tmpDataFromPrinter["progress"]["printTimeLeft"])))
 			if tmpDataFromPrinter["progress"]["printTime"] is not None and not eventID == 'printing_started':
 				data["printTime"] = str(timedelta(seconds=int(tmpDataFromPrinter["progress"]["printTime"])))
-			if tmpDataFromPrinter["progress"]["filepos"] is not None and not eventID == 'printing_started' and not eventID == 'printing_done' :
+			if tmpDataFromPrinter["progress"]["filepos"] is not None and not eventID in ['printing_started', 'printing_done']:
 				data["filepos"] = "{:.2f}MB".format(float(tmpDataFromPrinter["progress"]["filepos"]) / 1048576)
 
 		return self.send_message(eventID, tmpConfig["message"], tmpConfig["with_snapshot"], data)
@@ -353,15 +355,6 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 			except requests.ConnectTimeout:
 				snapshot = None
 				self._logger.error("{}: ConnectTimeout on: '{}'".format(eventID, snapshotUrl))
-
-		# data = self._printer.get_current_data()
-		# if data["progress"] is not None:
-		# 	if data["progress"]["printTimeLeft"] is not None:
-		# 		data["progress"]["printTimeLeft"] = str(timedelta(seconds=data["progress"]["printTimeLeft"]))
-		# 	if data["progress"]["printTime"] is not None:
-		# 		data["progress"]["printTime"] = str(timedelta(seconds=data["progress"]["printTime"]))
-		# else:
-		# 	data = None
 
 		# Send to Discord WebHook
 		discordCall = Hook(
