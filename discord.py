@@ -33,16 +33,12 @@ class Hook():
         for myurl in urls:
             webhook = DiscordWebhook(url=myurl, username=self.username, avatar_url=self.avatar)
             embed = DiscordEmbed(title=self.message, color=self.side_bar)
-            embed.set_footer(text='3DMeltdown-octorant _beta_', icon_url="https://cdn.discordapp.com/emojis/673897582375993365.png")
+            embed.set_footer(text='3DMeltdown-octorant _beta 0.2_', icon_url="https://cdn.discordapp.com/emojis/673897582375993365.png")
             embed.set_timestamp()
 
             for k in self.data:
                 if self.data[k] is not None:
-                    value = format(self.data[k])
-                    # if value.replace('.','',1).isdigit() and value.count('.') == 1:
-                    #     value = "{:.3}".format(float(value))
-
-                    embed.add_embed_field(name=format(k), value=value)
+                    embed.add_embed_field(name=format(k), value=format(self.data[k]))
 
             if self.attachment is not None:
                 webhook.add_file(file=self.attachment["file"][1], filename="0.png")
