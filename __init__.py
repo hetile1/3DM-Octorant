@@ -256,7 +256,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 
 
 		if 'size' in data:
-			data['size'] = str(int(data['size']) / 1048576) + 'MB'
+			data['size'] = "{:.2f}MB".format(int(data['size']) / 1048576)
 		if 'progress' in data:
 			data['progress'] = str(data['progress']) + '%'
 
