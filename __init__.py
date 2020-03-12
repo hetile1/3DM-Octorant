@@ -100,7 +100,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 			"test":{ # Not a real message, but we will treat it as one
 				"enabled" : True,
 				"with_snapshot": True,
-				"message" : "Hello hello! If you see this message, it means that the settings are correct!"
+				"message" : "Testing setting.. see this? then it worked.."
 			},
 		}
 		
