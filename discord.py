@@ -29,7 +29,7 @@ class Hook():
     def post(self):
         self.format()
 
-        urls = self.url..replace(" ", "").split(',')
+        urls = self.url.replace(" ", "").split(',')
         for myurl in urls:
             webhook = DiscordWebhook(url=myurl, username=self.username, avatar_url=self.avatar)
             embed = DiscordEmbed(title=self.message, color=self.side_bar)
