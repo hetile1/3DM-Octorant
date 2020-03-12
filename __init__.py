@@ -256,7 +256,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 
 
 		if 'size' in data:
-			data['size'] = "{:.2f}MB".format(int(data['size']) / 1048576)
+			data['size'] = "{:.2f}MB".format(float(data['size']) / 1048576)
 		if 'progress' in data:
 			data['progress'] = str(data['progress']) + '%'
 
@@ -267,7 +267,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 			if tmpDataFromPrinter["progress"]["printTime"] is not None and not eventID == 'printing_started':
 				data["printTime"] = str(timedelta(seconds=int(tmpDataFromPrinter["progress"]["printTime"])))
 			if tmpDataFromPrinter["progress"]["filepos"] is not None and not eventID == 'printing_started' and not eventID == 'printing_done' :
-				data["filepos"] = "{:.2f}MB".format(int(tmpDataFromPrinter["progress"]["filepos"]) / 1048576)
+				data["filepos"] = "{:.2f}MB".format(float(tmpDataFromPrinter["progress"]["filepos"]) / 1048576)
 
 		return self.send_message(eventID, tmpConfig["message"], tmpConfig["with_snapshot"], data)
 

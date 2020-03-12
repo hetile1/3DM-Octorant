@@ -33,7 +33,7 @@ class Hook():
         for myurl in urls:
             webhook = DiscordWebhook(url=myurl, username=self.username, avatar_url=self.avatar)
             embed = DiscordEmbed(title=self.message, color=self.side_bar)
-            embed.set_footer(text='3DMeltdown-octorant _beta 0.2.4_', icon_url="https://cdn.discordapp.com/emojis/673897582375993365.png")
+            embed.set_footer(text='3DMeltdown-octorant _beta 0.2.5_', icon_url="https://cdn.discordapp.com/emojis/673897582375993365.png")
             embed.set_timestamp()
 
             for k in self.data:
