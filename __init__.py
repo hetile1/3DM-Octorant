@@ -239,6 +239,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 		if eventID == 'printing_progress' and (\
 			int(tmpConfig["step"]) == 0 \
 			or int(data["progress"]) == 0 \
+			or int(data["progress"]) != 1 \
 			or int(data["progress"]) % int(tmpConfig["step"]) != 0 \
 			or (int(data["progress"]) == 100) \
 		) :
