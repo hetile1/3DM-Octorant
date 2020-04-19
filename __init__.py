@@ -1,6 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
-from .discord import Hook
+from .discord import Hook, InfoTracker
 
 import json
 import octoprint.plugin
@@ -11,7 +11,6 @@ from PIL import Image
 from io import BytesIO
 import subprocess
 import os
-
 
 class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 					 octoprint.plugin.StartupPlugin,
@@ -28,73 +27,73 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 				"name" : "Octoprint Startup",
 				"enabled" : True,
 				"with_snapshot": False,
-				"message" : "⏰ I just woke up! What are we gonna print today?"
+				"message" : "Startup  - default"
 			},
 			"shutdown" : {
 				"name" : "Octoprint Shutdown",
-				"enabled" : True,
+				"enabled" : False,
 				"with_snapshot": False,
-				"message" : "💤 Going to bed now!"
+				"message" : "Shutdown - default"
 			},
 			"printer_state_operational":{
 				"name" : "Printer state : operational",
-				"enabled" : True,
+				"enabled" : False,
 				"with_snapshot": False,
-				"message" : "✅ Your printer is operational."
+				"message" : "Operational - default"
 			},
 			"printer_state_error":{
 				"name" : "Printer state : error",
 				"enabled" : True,
 				"with_snapshot": False,
-				"message" : "⚠️ Your printer is in an erroneous state."
+				"message" : "Error - default"
 			},
 			"printer_state_unknown":{
 				"name" : "Printer state : unknown",
 				"enabled" : True,
 				"with_snapshot": False,
-				"message" : "❔ Your printer is in an unknown state."
+				"message" : "Unknown state - default."
 			},
 			"printing_started":{
 				"name" : "Printing process : started",
 				"enabled" : True,
 				"with_snapshot": True,
-				"message" : "🖨️ I've started printing {file}"
+				"message" : "Starting a print - default"
 			},
 			"printing_paused":{
 				"name" : "Printing process : paused",
 				"enabled" : True,
 				"with_snapshot": True,
-				"message" : "⏸️ The printing was paused."
+				"message" : "Paused - default"
 			},
 			"printing_resumed":{
 				"name" : "Printing process : resumed",
 				"enabled" : True,
 				"with_snapshot": True,
-				"message" : "▶️ The printing was resumed."
+				"message" : "Resumed - default"
 			},
 			"printing_cancelled":{
 				"name" : "Printing process : cancelled",
 				"enabled" : True,
 				"with_snapshot": True,
-				"message" : "🛑 The printing was stopped."
+				"message" : "Cancelled - default"
 			},
 			"printing_done":{
 				"name" : "Printing process : done",
 				"enabled" : True,
 				"with_snapshot": True,
-				"message" : "👍 Printing is done! Took about {time_formatted}"
+				"message" : "Done - default"
 			},
 			"printing_failed":{
 				"name" : "Printing process : failed",
 				"enabled" : True,
 				"with_snapshot": True,
-				"message" : "👎 Printing has failed! :("
+				"message" : "Failed - default"
 			},
 			"printing_progress":{
 				"name" : "Printing progress",
 				"enabled" : True,
 				"with_snapshot": True,
-				"message" : "📢 Printing is at {progress}%",
+				"message" : "Printing  - default",
 				"step" : 10
 			},
 			"test":{ # Not a real message, but we will treat it as one
@@ -103,6 +102,9 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 				"message" : "Testing setting.. see this? then it worked.."
 			},
 		}
+		self.__InfoTracker = InfoTracker()
+		self.__discordCall = Hook()
+
 		
 	def on_after_startup(self):
 		self._logger.info("Octorant is started !")
@@ -112,10 +114,10 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 
 	def get_settings_defaults(self):
 		return {
-			'url': "",
+			'url': "https://discordapp.com/api/webhooks/696566735163359262/vk2w_6JWMU7j_Pl6Nlf2atdihP3cuQT6laZe_K0IOZIsWt8B6Bxavfg_SdSfwEJeGq-r",
 			'username': "",
 			'avatar': "",
-			'side_bar': "",
+			'side_bar': "FFFFFF",
 			'events' : self.events,
 			'allow_scripts': False,
 			'script_before': '',
@@ -132,6 +134,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 	##~~ AssetPlugin mixin
 
 	def get_assets(self):
+		#self._logger.info("get_assets()")
 		# Define your plugin's asset files to automatically include in the
 		# core UI here.
 		return dict(
@@ -142,6 +145,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 
 	##~~ TemplatePlugin mixin
 	def get_template_configs(self):
+		#self._logger.info("get_template_configs()")
 		return [
 			dict(type="settings", custom_bindings=False)
 		]
@@ -171,31 +175,35 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 	##~~ EventHandlerPlugin hook
 
 	def on_event(self, event, payload):
-		
-		if event == "Startup":
+		#self._logger.info("on_event({}): {}".format(event, payload))
+
+		if event == "ZChange":
+			self.__InfoTracker.setZ(payload["new"])
+		elif event == "Startup":
+			self.__discordCall.init(self._settings.get(["url"], merged=True),
+									self._settings.get(["username"],merged=True),
+									self._settings.get(['avatar'],merged=True),
+									self._settings.get(['side_bar'],merged=True) )
 			return self.notify_event("startup")
-		
-		if event == "Shutdown":
+		elif event == "Shutdown":
+			self.__InfoTracker.clear()
 			return self.notify_event("shutdown")
-		
-		if event == "PrinterStateChanged":
+		elif event == "PrinterStateChanged":
 			if payload["state_id"] == "OPERATIONAL":
 				return self.notify_event("printer_state_operational")
 			elif payload["state_id"] == "ERROR":
 				return self.notify_event("printer_state_error")
 			elif payload["state_id"] == "UNKNOWN":
 				return self.notify_event("printer_state_unknown")
-		
-		if event == "PrintStarted":
+		elif event == "PrintStarted":
 			return self.notify_event("printing_started",payload)	
-		if event == "PrintPaused":
+		elif event == "PrintPaused":
 			return self.notify_event("printing_paused",payload)
-		if event == "PrintResumed":
+		elif event == "PrintResumed":
 			return self.notify_event("printing_resumed",payload)
-		if event == "PrintCancelled":
+		elif event == "PrintCancelled":
 			return self.notify_event("printing_cancelled",payload)
-
-		if event == "PrintDone":
+		elif event == "PrintDone":
 			payload['time_formatted'] = str(timedelta(seconds=int(payload["time"])))
 			return self.notify_event("printing_done", payload)
 	
@@ -228,50 +236,36 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 		if(eventID not in self.events):
 			self._logger.error("Tried to notifiy on inexistant eventID : ", eventID)
 			return False
+		#self._logger.info("notify_event({}, {}): start".format(eventID, data))
 		
 		tmpConfig = self._settings.get(["events", eventID],merged=True)
-		
 		if tmpConfig["enabled"] != True:
 			self._logger.debug("Event {} is not enabled. Returning gracefully".format(eventID))
 			return False
 
-		# Special case for progress eventID : we check for progress and steps
-		if eventID == 'printing_progress' and (\
-			int(tmpConfig["step"]) == 0 \
-			or int(data["progress"]) == 0 \
-			or int(data["progress"]) % int(tmpConfig["step"]) != 0 \
-			or (int(data["progress"]) == 100) \
-		) :
-			return False			
+		self.__InfoTracker.printerData(self._printer.get_current_data())
 
-		# Do some cleanup for display purposes
+		# Uptade tracker with current state
 		if eventID == 'printing_started':
-			data = {key:data[key] for key in ['name', 'size']}
+			self.__InfoTracker.start(data['name'], data['size'])
 		elif eventID == "printing_cancelled":
-			data["time"] = str(timedelta(seconds=int(data["time"])))
-			data = {key:data[key] for key in ['name', 'size', 'time']}
+			self.__InfoTracker.stop(data['time'])
 		elif eventID == 'printing_done':
-			data = {key:data[key] for key in ['name', 'size']}
+			self.__InfoTracker.stop()
+		elif eventID in ['shutdown', 'startup']:
+			self.__InfoTracker.clear()
 
+		# Special case for progress eventID : we check for progress and steps
+		elif eventID == 'printing_progress':
+			self.__InfoTracker.progress(data["progress"], tmpConfig["step"])
+			if (int(tmpConfig["step"]) == 0 \
+				or int(data["progress"]) == 0 \
+				or int(data["progress"]) % int(tmpConfig["step"]) != 0 \
+				or (int(data["progress"]) == 100) \
+			) :
+				return False
 
-		# Format some of the values
-		if 'size' in data:
-			data['size'] = "{:.2f}MB".format(float(data['size']) / 1048576)
-		if 'name' in data:
-			data['name'] = str(data['name']).replace('.gcode', '').replace('.GCODE', '')
-		if 'progress' in data:
-			data['progress'] = str(data['progress']) + '%'
-
-		tmpDataFromPrinter = self._printer.get_current_data()
-		if tmpDataFromPrinter["progress"] is not None:
-			if tmpDataFromPrinter["progress"]["printTimeLeft"] is not None and not eventID == 'printing_done':
-				data["printTimeLeft"] = str(timedelta(seconds=int(tmpDataFromPrinter["progress"]["printTimeLeft"])))
-			if tmpDataFromPrinter["progress"]["printTime"] is not None and not eventID == 'printing_started':
-				data["printTime"] = str(timedelta(seconds=int(tmpDataFromPrinter["progress"]["printTime"])))
-			if tmpDataFromPrinter["progress"]["filepos"] is not None and not eventID in ['printing_started', 'printing_done']:
-				data["filepos"] = "{:.2f}MB".format(float(tmpDataFromPrinter["progress"]["filepos"]) / 1048576)
-
-		return self.send_message(eventID, tmpConfig["message"], tmpConfig["with_snapshot"], data)
+		return self.send_message(eventID, tmpConfig["message"], tmpConfig["with_snapshot"])
 
 	def exec_script(self, eventName, which=""):
 
@@ -302,8 +296,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 			return out
 
 
-	def send_message(self, eventID, message, withSnapshot=False, data={}):
-
+	def send_message(self, eventID, message, withSnapshot=False):
 		# return false if no URL is provided
 		if "http" not in self._settings.get(["url"],merged=True):
 			return False
@@ -347,7 +340,6 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 
 						snapshotImage = newImage	
 
-
 					snapshot = {'file': ("snapshot.png", snapshotImage.getvalue())}
 			except requests.ConnectionError:
 				snapshot = None
@@ -357,18 +349,7 @@ class OctorantPlugin(octoprint.plugin.EventHandlerPlugin,
 				self._logger.error("{}: ConnectTimeout on: '{}'".format(eventID, snapshotUrl))
 
 		# Send to Discord WebHook
-		discordCall = Hook(
-			self._settings.get(["url"], merged=True),
-			message,
-			self._settings.get(["username"],merged=True),
-			self._settings.get(['avatar'],merged=True),
-			self._settings.get(['side_bar'],merged=True),
-			# data["progress"],
-			data,
-			snapshot
-		)		
-
-		out = discordCall.post()
+		out = self.__discordCall.post(message, snapshot, self.__InfoTracker.data)
 
 		# exec "after" script if any
 		self.exec_script(eventID, "after")
